@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>每日名言 - NFC触碰获取智慧</title>
+    <style>
+        /* 基础样式重置 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-color: #4a6fa5;
+            --secondary-color: #6b8cbc;
+            --text-color: #333;
+            --light-text: #fff;
+            --shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: var(--text-color);
+            overflow-x: hidden;
+            height: 100vh;
+            transition: background 1.5s ease;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .container {
+            max-width: 100%;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            position: relative;
+        }
+
+        .quote-card {
+            background: rgba(255, 255, 255, 0.85);
+            border-radius: 16px;
+            padding: 30px;
+            max-width: 90%;
+            box-shadow: var(--shadow);
+            backdrop-filter: blur(10px);
+            text-align: center;
+            transition: transform 0.5s ease, opacity 0.5s ease;
+        }
+
+        .quote-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .quote-text {
+            font-size: 1.4rem;
+            margin-bottom: 20px;
+            line-height: 1.8;
+            font-weight: 500;
+        }
+
+        .quote-author {
+            font-size: 1.1rem;
+            font-style: italic;
+            color: var(--secondary-color);
+            margin-bottom: 15px;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 50px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            flex: 1;
+            min-width: 100px;
+            max-width: 120px;
+        }
+
+        button:hover {
+            background: var(--secondary-color);
+            transform: translateY(-2px);
+        }
+
+        .indicator {
+            position: absolute;
+            bottom: 30px;
+            display: flex;
+            gap: 8px;
+        }
+
+        .dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.5);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .dot.active {
+            background: white;
+            transform: scale(1.2);
+        }
+
+        .footer {
+            position: absolute;
+            bottom: 10px;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.8rem;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 480px) {
+            .quote-text {
+                font-size: 1.2rem;
+            }
+            
+            .quote-author {
+                font-size: 1rem;
+            }
+            
+            button {
+                padding: 8px 16px;
+                font-size: 0.8rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="quote-card">
+            <div class="quote-text" id="quoteText">点击下方按钮获取名言</div>
+            <div class="quote-author" id="quoteAuthor"></div>
+            <div class="controls">
+                <button id="prevBtn">上一条</button>
+                <button id="nextBtn">下一条</button>
+                <button id="randomBtn">随机名言</button>
+            </div>
+        </div>
+        <div class="indicator" id="indicator"></div>
+        <div class="footer">通过NFC触碰访问 · 每日智慧</div>
+    </div>
+    
+    <script>
+        // 名言数据
+        const quotes = [
+            {
+                text: "生活就像一盒巧克力，你永远不知道下一块是什么味道。",
+                author: "《阿甘正传》"
+            },
+            {
+                text: "成功的秘诀在于对目标的忠诚。",
+                author: "本杰明·迪斯雷利"
+            },
+            {
+                text: "人生没有彩排，每一天都是现场直播。",
+                author: "佚名"
+            },
+            {
+                text: "路漫漫其修远兮，吾将上下而求索。",
+                author: "屈原"
+            },
+            {
+                text: "天行健，君子以自强不息；地势坤，君子以厚德载物。",
+                author: "《周易》"
+            },
+            {
+                text: "知识就是力量。",
+                author: "弗朗西斯·培根"
+            },
+            {
+                text: "千里之行，始于足下。",
+                author: "老子"
+            },
+            {
+                text: "时间就像海绵里的水，只要愿挤，总还是有的。",
+                author: "鲁迅"
+            },
+            {
+                text: "人生最大的光荣，不在于永不失败，而在于能屡仆屡起。",
+                author: "拿破仑"
+            },
+            {
+                text: "活着就是为了改变世界，难道还有其他原因吗？",
+                author: "史蒂夫·乔布斯"
+            }
+        ];
+
+        // DOM元素
+        const quoteText = document.getElementById('quoteText');
+        const quoteAuthor = document.getElementById('quoteAuthor');
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const randomBtn = document.getElementById('randomBtn');
+        const indicator = document.getElementById('indicator');
+
+        // 当前显示的名言索引
+        let currentIndex = 0;
+
+        // 初始化函数
+        function init() {
+            // 显示第一条名言
+            displayQuote(currentIndex);
+            
+            // 创建指示器点
+            createIndicatorDots();
+            
+            // 添加事件监听器
+            prevBtn.addEventListener('click', showPreviousQuote);
+            nextBtn.addEventListener('click', showNextQuote);
+            randomBtn.addEventListener('click', showRandomQuote);
+        }
+
+        // 显示指定索引的名言
+        function displayQuote(index) {
+            const quote = quotes[index];
+            quoteText.textContent = quote.text;
+            quoteAuthor.textContent = `—— ${quote.author}`;
+            
+            // 更新指示器
+            updateIndicator(index);
+            
+            // 更新当前索引
+            currentIndex = index;
+        }
+
+        // 显示上一条名言
+        function showPreviousQuote() {
+            currentIndex = (currentIndex - 1 + quotes.length) % quotes.length;
+            displayQuote(currentIndex);
+        }
+
+        // 显示下一条名言
+        function showNextQuote() {
+            currentIndex = (currentIndex + 1) % quotes.length;
+            displayQuote(currentIndex);
+        }
+
+        // 显示随机名言
+        function showRandomQuote() {
+            let randomIndex;
+            do {
+                randomIndex = Math.floor(Math.random() * quotes.length);
+            } while (randomIndex === currentIndex && quotes.length > 1);
+            
+            displayQuote(randomIndex);
+        }
+
+        // 创建指示器点
+        function createIndicatorDots() {
+            indicator.innerHTML = '';
+            for (let i = 0; i < quotes.length; i++) {
+                const dot = document.createElement('div');
+                dot.classList.add('dot');
+                if (i === currentIndex) {
+                    dot.classList.add('active');
+                }
+                dot.addEventListener('click', () => {
+                    displayQuote(i);
+                });
+                indicator.appendChild(dot);
+            }
+        }
+
+        // 更新指示器
+        function updateIndicator(index) {
+            const dots = document.querySelectorAll('.dot');
+            dots.forEach((dot, i) => {
+                if (i === index) {
+                    dot.classList.add('active');
+                } else {
+                    dot.classList.remove('active');
+                }
+            });
+        }
+
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
